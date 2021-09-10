@@ -148,13 +148,28 @@ class _MyHomePageState extends State<MyHomePage> {
 
   }
 
-  _borrarTodos(){
-    List<Todo> pendientes=[];
-    for(var todo in _todos){
-      if(!todo.done) pendientes.add(todo);
-      setState(()=>_todos=pendientes);
 
+  _actulizatodos(Todo jas){
+    List<Todo> actualizados=[];
+    for(var todo in _todos){
+      if(todo.id==jas.id) {
+        actualizados.add(jas);
+      }else{
+        actualizados.add(todo);
+      }
     }
+    setState(()=>_todos=actualizados);
+  }
+
+  _borrarTodos(int nel){
+    List<Todo> actualizados=[];
+    for(var todo in _todos){
+      if(todo.id==-nel) {
+      }else{
+        actualizados.add(todo);
+      }
+    }
+    setState(()=>_todos=actualizados);
   }
 
 
@@ -213,7 +228,12 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         OutlinedButton(
             onPressed: () {
-              fetchAlbum(_todos[_todos.length].id+1);
+              int v;
+              if(_todos.isEmpty){
+                fetchAlbum(1);
+              }else{
+                fetchAlbum(_todos[_todos.length-1].id+1);
+              }
             },
             child: const Text('Gatos'),
           ),
@@ -241,7 +261,11 @@ class _MyHomePageState extends State<MyHomePage> {
                               builder: (_)=>ActualizaBorra(comienzo: _todos[index]))
                       ).then((actualiza){
                         setState(() {
-                          _todos.add(actualiza);
+                          if(actualiza.id>0){
+                            _actulizatodos(actualiza);
+                          }else{
+                            _borrarTodos(actualiza.id);
+                          }
                         });
                       });
                     },
@@ -327,7 +351,7 @@ class _ActualizaBorraState extends State<ActualizaBorra> {
               child: const Text('Actualizar')),
           ElevatedButton(
               onPressed: (){
-                Navigator.of(context).pop(Todo(comienzo.id,_controller.text));
+                Navigator.of(context).pop(Todo(-comienzo.id,_controller.text));
               },
               child: const Text('Borrar'))
 
