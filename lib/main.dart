@@ -92,7 +92,8 @@ class Datum {
 
 
 class _MyHomePageState extends State<MyHomePage> {
-  late List<Todo> _todos;
+  List<Todo> _todos=[];
+  List<Todo> _todosbuscado=[];
   TextEditingController? _textEditingController=TextEditingController();
 
   @override
@@ -101,14 +102,17 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
   }
 
-  Future<Todo> fetchAlbum(int n) async {
-    final response=await http.get(Uri.parse('https://catfact.ninja/facts?limit=1&max_length=140'));
+  Future<Todo> fetchAlbum(int n,int numeroFrases) async {
+    final response=await http.get(Uri.parse('https://catfact.ninja/facts?limit=${numeroFrases.toString()}&max_length=140'));
     if (response.statusCode == 200) {
       // If the server did return a 200 OK response,
       // then parse the JSON.
       Gatosjj resp=Gatosjj.fromJson(jsonDecode(response.body));
       setState(() {
-        _todos.add(Todo(n,resp.data[0].fact.toString()));
+        for(var res1 in resp.data){
+          _todos.add(Todo(n,res1.fact.toString()));
+          n=n+1;
+        }
       });
       return Todo(1,'gato');
     } else {
@@ -190,7 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 });
               }else{
                 super.setState(() {
-                  _todos= _todos.where((element) => element.what.contains(value)).toList();
+                  _todosbuscado= _todos.where((element) => element.what.contains(value)).toList();
                 });
               }
 
@@ -207,53 +211,56 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
       ),
-      body: Column(
-        children:[
-        OutlinedButton(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                  builder: (_)=>NuevaTarea())
-            ).then((what){
-              setState(() {
-                if(_todos.isEmpty){
-                  _todos.add(Todo(1,what));
-                }else{
-                  _todos.add(Todo(_todos[_todos.length-1].id+1,what));
-                }
-              });
-            });
-            },
-            child: const Text('Nueva tarea'),
-          ),
-        OutlinedButton(
-            onPressed: () {
-              int v;
-              if(_todos.isEmpty){
-                fetchAlbum(1);
-              }else{
-                fetchAlbum(_todos[_todos.length-1].id+1);
-              }
-            },
-            child: const Text('Gatos'),
-          ),
-        ListView.builder(
-          scrollDirection: Axis.vertical,
-          shrinkWrap: true,
-            itemCount: _todos.length,
-            itemBuilder: (BuildContext context, int index) {
-              return ListTile(
-                leading: Checkbox(
-                  value: _todos[index].done,
-                  onChanged: (checked){
-                    setState(() {
-                      _todos[index].done=checked!;
-                    });
-
-                  },
-                ),
-                title: Text(_todos[index].what),
-                trailing: IconButton(
+      body:SingleChildScrollView(
+        child:Column(
+          children:[
+            OutlinedButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (_)=>NuevaTarea())
+                ).then((what){
+                  setState(() {
+                    if(_todos.isEmpty){
+                      _todos.add(Todo(1,what));
+                    }else{
+                      _todos.add(Todo(_todos[_todos.length-1].id+1,what));
+                    }
+                  });
+                });
+                },
+              child: const Text('Nueva tarea'),),
+            OutlinedButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (_)=>VistaGatos())
+                ).then((what){
+                  if(_todos.isEmpty){
+                    fetchAlbum(1,what);
+                  }else{
+                    fetchAlbum(_todos[_todos.length-1].id+1,what);
+                  }
+                });
+                },
+              child: const Text('Gatos'),
+            ),
+            ListView.builder(
+              scrollDirection: Axis.vertical,
+              shrinkWrap: true,
+              itemCount: _textEditingController!.text.isNotEmpty? _todosbuscado.length:_todos.length,
+              itemBuilder: (BuildContext context, int index) {
+                return ListTile(
+                  leading: Checkbox(
+                    value: _textEditingController!.text.isNotEmpty? _todosbuscado[index].done:_todos[index].done,
+                    onChanged: (checked){
+                      setState(() {
+                        _todos[index].done=checked!;
+                      });
+                      },
+                  ),
+                  title: Text(_textEditingController!.text.isNotEmpty? _todosbuscado[index].what:_todos[index].what),
+                  trailing: IconButton(
                     icon:const Icon(Icons.more_vert),
                     onPressed: () {
                       Navigator.of(context).push(
@@ -268,15 +275,14 @@ class _MyHomePageState extends State<MyHomePage> {
                           }
                         });
                       });
-                    },
-                ),
-              );
-            },
-        ),
-        ],
-          ),
-
-      );
+                      },
+                  ),
+                );
+                },
+            ),
+          ],
+        ),),
+    );
   }
 }
 
@@ -360,5 +366,41 @@ class _ActualizaBorraState extends State<ActualizaBorra> {
     );
   }
 }
+
+class VistaGatos extends StatefulWidget {
+  const VistaGatos({Key? key}) : super(key: key);
+
+  @override
+  _VistaGatosState createState() => _VistaGatosState();
+}
+
+class _VistaGatosState extends State<VistaGatos> {
+  TextEditingController _controller2=TextEditingController();
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Nuevas frases de gatos:')),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          TextField(
+            controller: _controller2,
+            keyboardType: TextInputType.number,
+            onSubmitted: (what){
+              Navigator.of(context).pop(int.parse(what));
+            },
+          ),
+          ElevatedButton(
+              onPressed: (){
+                Navigator.of(context).pop(int.parse(_controller2.text.toString()));
+              },
+              child: const Text('Agregar frases de gatos'))
+
+        ],
+      ),
+    );
+  }
+}
+
 
 
